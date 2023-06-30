@@ -47,11 +47,9 @@ class AtomicOperationParser(JSONParser):
             raise ParseError(
                 f"Unknown operation `{op}` received for operation with index {idx}")
 
-    def check_operation_objects(self, operations: List[Dict]):
-        for idx, operation in enumerate(operations):
-            self.check_operation_code(idx, operation)
 
-    def parse_data(self, result, parser_context):
+
+    def parse_data(self, result, parser_context) -> List[]:
         """
         Formats the output of calling JSONParser to match the JSON:API specification
         and returns the result.
@@ -62,6 +60,7 @@ class AtomicOperationParser(JSONParser):
 
         operations = result.get("atomic:operations")
         parser_context = parser_context or {}
+        view = parser_context.get("view")
 
         # Sanity check
         if not isinstance(operations, list):
@@ -69,9 +68,18 @@ class AtomicOperationParser(JSONParser):
                 "Received operations is not a valid JSON:API atomic operation request"
             )
 
-        self.check_operation_objects(operations)
+        
+
+        for idx, operation in enumerate(operations):
+            self.check_operation_code(idx, operation)
+            # TODO: pre check if operation primary data is correct
+            serializer = view.get_serializer_class(operation, operation["data"]["type"])
 
         # TODO: parse every operation object... otherwise it can't be processed with our serializers
+
+
+
+        
         # Construct the return data
         parsed_data = {"id": data.get("id")} if "id" in data else {}
         parsed_data["type"] = data.get("type")
