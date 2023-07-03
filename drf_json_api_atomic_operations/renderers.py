@@ -1,25 +1,11 @@
 """
 Renderers
 """
-import copy
-from collections import defaultdict
-from collections.abc import Iterable
+import json
 from typing import List, OrderedDict
 
-import inflection
-import rest_framework_json_api
-from django.db.models import Manager
-from django.template import loader
-from django.utils.encoding import force_str
-from rest_framework.fields import SkipField, get_attribute
-from rest_framework.relations import PKOnlyObject
-from rest_framework.serializers import ListSerializer, Serializer
-from rest_framework.settings import api_settings
-from rest_framework_json_api import utils
-from rest_framework_json_api.relations import (
-    HyperlinkedMixin, ManySerializerMethodResourceRelatedField,
-    ResourceRelatedField, SkipDataMixin)
 from rest_framework_json_api.renderers import JSONRenderer
+from rest_framework_json_api.utils import get_resource_type_from_serializer
 
 
 class AtomicResultRenderer(JSONRenderer):
@@ -56,9 +42,14 @@ class AtomicResultRenderer(JSONRenderer):
         atomic_results = []
         for operation_result_data in data:
             # pass in the resource name
-            renderer_context["view"]["resource_name"] = operation_result_data["type"]
-            atomic_results.append(super().render(
-                operation_result_data, accepted_media_type, renderer_context))
-        return {
-            "atomic:results": atomic_results
-        }
+            renderer_context["view"].resource_name = get_resource_type_from_serializer(
+                operation_result_data.serializer)
+            rendered_primary_data = super().render(
+                operation_result_data, accepted_media_type, renderer_context)
+            atomic_results.append(rendered_primary_data.decode("UTF-8"))
+
+        atomic_results_str = f"[{','.join(atomic_results)}]"
+
+        rendered_content = '{"atomic:results":' + atomic_results_str + '}'
+
+        return rendered_content.encode()

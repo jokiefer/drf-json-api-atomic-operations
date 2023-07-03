@@ -3,6 +3,7 @@ from io import BytesIO
 
 from django.test import Client, RequestFactory, TestCase
 
+from tests.models import BasicModel
 from tests.views import ConcretAtomicOperationView
 
 
@@ -11,27 +12,26 @@ class TestAtomicOperationView(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.view = ConcretAtomicOperationView
+        self.client = Client()
 
-    def test_parse(self):
+    def test_view(self):
         data = {
             "atomic:operations": [
                 {
                     "op": "add",
-                    "href": "/blogPosts",
                     "data": {
-                        "type": "articles",
+                        "type": "BasicModel",
                         "attributes": {
-                            "title": "JSON API paints my bikeshed!"
+                            "text": "JSON API paints my bikeshed!"
                         }
                     }
                 }, {
                     "op": "update",
-                    "href": "/blogPosts",
                     "data": {
                         "id": "1",
-                        "type": "articles",
+                        "type": "BasicModel",
                         "attributes": {
-                            "title": "JSON API paints my bikeshed!"
+                            "text": "JSON API paints my bikeshed2!"
                         }
                     }
                 }
@@ -45,4 +45,65 @@ class TestAtomicOperationView(TestCase):
         )
         response = self.view.as_view()(post_request)
 
-        i = 0
+    def test_view_two(self):
+
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "update",
+                "data": {
+                    "id": "1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed2!"
+                    }
+                }
+            }
+        ]
+
+        data = {
+            "atomic:operations": operations
+        }
+
+        expected_result = {
+            "atomic:results": [
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed2!"
+                        }
+                    }
+                }
+            ]
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type='application/vnd.api+json;ext="https://jsonapi.org/ext/atomic',
+
+            **{"HTTP_ACCEPT": 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'}
+        )
+
+        self.assertEqual(1, BasicModel.objects.count())
+
+        self.assertDictEqual(expected_result,
+                             json.loads(response.content))
