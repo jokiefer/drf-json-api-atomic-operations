@@ -12,7 +12,8 @@
             "console": "integratedTerminal",
             "args": [
                 "runserver"
-            ]
+            ],
+            "justMyCode": false
         },
         {
             "name": "Python: Django test",
@@ -22,7 +23,8 @@
             "console": "integratedTerminal",
             "args": [
                 "test"
-            ]
+            ],
+            "justMyCode": false
         }
     ]
 }

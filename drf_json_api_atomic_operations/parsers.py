@@ -1,13 +1,11 @@
 """
 Parsers
 """
-from typing import Dict, List
+from typing import Dict
 
 from rest_framework.exceptions import ParseError
-# from rest_framework.parsers import JSONParser
-from rest_framework_json_api import exceptions, renderers
+from rest_framework_json_api import renderers
 from rest_framework_json_api.parsers import JSONParser
-from rest_framework_json_api.utils import get_resource_type_from_serializer
 
 
 class AtomicOperationParser(JSONParser):
@@ -112,7 +110,7 @@ class AtomicOperationParser(JSONParser):
                 _parsed_data.update(self.parse_relationships(data))
                 _parsed_data.update(self.parse_metadata(result))
             parsed_data.append({
-                operation.get("op"): _parsed_data
+                op: _parsed_data
             })
 
         return parsed_data

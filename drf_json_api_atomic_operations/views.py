@@ -1,6 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, OrderedDict
 
 from django.core.exceptions import ImproperlyConfigured
+from django.db.transaction import atomic
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,8 +13,8 @@ from drf_json_api_atomic_operations.types import SerializerMapping
 
 
 class AtomicOperationView(APIView):
-    renderer_classes = AtomicResultRenderer
-    parser_classes = AtomicOperationParser
+    renderer_classes = [AtomicResultRenderer]
+    parser_classes = [AtomicOperationParser]
 
     # only post method is allowed https://jsonapi.org/ext/atomic/#processing
     http_method_names = ["post"]
@@ -42,16 +43,24 @@ class AtomicOperationView(APIView):
     # call def check_permissions for `add` operation
     # call def check_object_permissions for `update` and `remove` operation
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
-
     def post(self, request, *args, **kwargs):
-        request.data  # this is the data returned from the json parser
+        return self.perform_operations(request.data)
 
-        # TODO: serialize every operation data with the correct serializer
+    def perform_operations(self, parsed_operations: List[Dict]):
+        response_data: List[OrderedDict] = []
+        with atomic():
+            for operation in parsed_operations:
+                op_code = next(iter(operation))
+                obj = operation[op_code]
+                # TODO: collect operations of same op_code and resource type to support bulk_create | bulk_update | filter(id__in=[1,2,3]).delete()
+                if op_code in ["add", "update"]:
+                    serializer = self.get_serializer(obj)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    response_data.append(serializer.data)
+                else:
+                    # remove
+                    instance = self.get_object()
+                    instance.delete()
 
-        return self.create(request, *args, **kwargs)
+        return Response(response_data, status=status.HTTP_200_OK if response_data else status.HTTP_204_NO_CONTENT)

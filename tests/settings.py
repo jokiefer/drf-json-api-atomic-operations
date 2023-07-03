@@ -47,3 +47,34 @@ DATABASES = {"default": {'ENGINE': 'django.db.backends.sqlite3',
 DEBUG = True
 
 ROOT_URLCONF = "tests.urls"
+
+
+REST_FRAMEWORK = {
+    "PAGE_SIZE": 10,
+    "MAX_PAGE_SIZE": 100,
+    "EXCEPTION_HANDLER": "rest_framework_json_api.exceptions.exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ),
+    # "DEFAULT_PAGINATION_CLASS": "drf_spectacular_jsonapi.schemas.pagination.JsonApiPageNumberPagination",
+    "DEFAULT_PARSER_CLASSES": (
+        "rest_framework_json_api.parsers.JSONParser",
+    ),
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework_json_api.renderers.JSONRenderer",
+        "drf_json_api_atomic_operations.renderers.AtomicResultRenderer"
+    ],
+
+    "DEFAULT_METADATA_CLASS": "rest_framework_json_api.metadata.JSONAPIMetadata",
+    "DEFAULT_FILTER_BACKENDS": (
+        "rest_framework_json_api.filters.QueryParameterValidationFilter",
+        "rest_framework_json_api.filters.OrderingFilter",
+        "rest_framework.filters.SearchFilter",
+    ),
+    "SEARCH_PARAM": "filter[search]",
+    "TEST_REQUEST_RENDERER_CLASSES": (
+        "rest_framework_json_api.renderers.JSONRenderer",
+    ),
+    "TEST_REQUEST_DEFAULT_FORMAT": "vnd.api+json",
+}
