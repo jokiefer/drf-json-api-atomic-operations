@@ -6,4 +6,5 @@ class ConcretAtomicOperationView(AtomicOperationView):
     serializer_classes = {
         "add:BasicModel": BasicModelSerializer,
         "update:BasicModel": BasicModelSerializer,
+        "remove:BasicModel": BasicModelSerializer,
     }

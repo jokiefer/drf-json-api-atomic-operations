@@ -52,7 +52,7 @@ class AtomicOperationView(APIView):
             operation_code, resource_type)
         kwargs.setdefault('context', self.get_serializer_context())
 
-        if operation_code == "update":
+        if operation_code in ["update", "remove"]:
             kwargs.update({
                 "instance": serializer_class.Meta.model.objects.get(pk=kwargs["data"]["id"])
             })
@@ -79,18 +79,17 @@ class AtomicOperationView(APIView):
                 op_code = next(iter(operation))
                 obj = operation[op_code]
                 # TODO: collect operations of same op_code and resource type to support bulk_create | bulk_update | filter(id__in=[1,2,3]).delete()
+                serializer = self.get_serializer(
+                    data=obj,
+                    operation_code=op_code,
+                    resource_type=obj["type"]
+                )
                 if op_code in ["add", "update"]:
-                    serializer = self.get_serializer(
-                        data=obj,
-                        operation_code=op_code,
-                        resource_type=obj["type"]
-                    )
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
                     response_data.append(serializer.data)
                 else:
                     # remove
-                    instance = self.get_object()
-                    instance.delete()
+                    serializer.instance.delete()
 
         return Response(response_data, status=status.HTTP_200_OK if response_data else status.HTTP_204_NO_CONTENT)

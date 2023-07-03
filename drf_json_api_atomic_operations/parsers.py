@@ -57,17 +57,14 @@ class AtomicOperationParser(JSONParser):
                 raise ParseError(
                     "either ref or href must be part of the remove operation")
 
-    def check_primary_data(self, operation: Dict, parser_context):
-        data = operation.get("data")
-        op = operation.get("op", None)
-
+    def check_primary_data(self, data: Dict, operation_code: str):
         # Sanity check
         if not isinstance(data, dict):
             raise ParseError(
                 "Received data is not a valid JSON:API Resource Identifier Object"
             )
 
-        if not data.get("id") and op in ("update", "remove"):
+        if not data.get("id") and operation_code in ("update", "remove"):
             raise ParseError(
                 "The resource identifier object must contain an 'id' member"
             )
@@ -98,19 +95,17 @@ class AtomicOperationParser(JSONParser):
         parsed_data = []
         for idx, operation in enumerate(operations):
             self.check_operation_code(idx, operation)
-            self.check_primary_data(operation, parser_context)
-            data = operation["data"]
-            op = operation["op"]
+            data = operation.get("data", operation.get(
+                "ref", operation.get("href")))
+            operation_code = operation["op"]
+            self.check_primary_data(data, operation_code)
 
-            if op == "remove":
-                _parsed_data = self.parse_id_and_type(data=data["ref"])
-            else:
-                _parsed_data = self.parse_id_and_type(data=data)
-                _parsed_data.update(self.parse_attributes(data))
-                _parsed_data.update(self.parse_relationships(data))
-                _parsed_data.update(self.parse_metadata(result))
+            _parsed_data = self.parse_id_and_type(data=data)
+            _parsed_data.update(self.parse_attributes(data))
+            _parsed_data.update(self.parse_relationships(data))
+            _parsed_data.update(self.parse_metadata(result))
             parsed_data.append({
-                op: _parsed_data
+                operation_code: _parsed_data
             })
 
         return parsed_data

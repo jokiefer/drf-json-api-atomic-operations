@@ -65,6 +65,12 @@ class TestAtomicOperationView(TestCase):
                             "text": "JSON API paints my bikeshed2!"
                     }
                 }
+            }, {
+                "op": "remove",
+                "ref": {
+                    "id": "1",
+                    "type": "BasicModel",
+                }
             }
         ]
 
@@ -103,7 +109,7 @@ class TestAtomicOperationView(TestCase):
             **{"HTTP_ACCEPT": 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'}
         )
 
-        self.assertEqual(1, BasicModel.objects.count())
+        self.assertEqual(0, BasicModel.objects.count())
 
         self.assertDictEqual(expected_result,
                              json.loads(response.content))
