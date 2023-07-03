@@ -1,13 +1,14 @@
 from typing import Dict, List
 
 from django.core.exceptions import ImproperlyConfigured
-from parsers import AtomicOperationParser
-from renderers import AtomicResultRenderer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_json_api.views import ModelViewSet
 
-from drf_json_api_atomic_operation.types import SerializerMapping
+from drf_json_api_atomic_operations.parsers import AtomicOperationParser
+from drf_json_api_atomic_operations.renderers import AtomicResultRenderer
+from drf_json_api_atomic_operations.types import SerializerMapping
 
 
 class AtomicOperationView(APIView):
