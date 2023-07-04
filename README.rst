@@ -1,3 +1,12 @@
+.. image:: https://readthedocs.org/projects/drf-json-api-atomic-operations/badge/?version=latest
+    :target: https://drf-json-api-atomic-operations.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. image:: https://badge.fury.io/py/drf-json-api-atomic-operations.svg
+    :target: https://pypi.org/project/drf-json-api-atomic-operations/
+    :alt: PyPi version
+
+
 drf-json-api-atomic-operation
 =============================
 
