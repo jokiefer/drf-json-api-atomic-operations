@@ -166,7 +166,7 @@ class TestAtomicOperationView(TestCase):
         self.assertEqual(400, response.status_code)
         self.assertDictEqual(expected_error, error)
 
-    def test_view_exception_handling(self):
+    def test_view_422_response(self):
         operations = [
             {
                 "op": "update",
@@ -203,5 +203,32 @@ class TestAtomicOperationView(TestCase):
                 }
             ]
         }
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(422, response.status_code)
         self.assertDictEqual(expected_error, error)
+
+    def test_view_204_response(self):
+        obj = BasicModel.objects.create()
+
+        operations = [
+            {
+                "op": "remove",
+                "ref": {
+                    "id": obj.pk,
+                    "type": "BasicModel"
+                }
+            }
+        ]
+
+        data = {
+            "atomic:operations": operations
+        }
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type='application/vnd.api+json;ext="https://jsonapi.org/ext/atomic',
+
+            **{"HTTP_ACCEPT": 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'}
+        )
+
+        self.assertEqual(204, response.status_code)
+        self.assertFalse(response.content)

@@ -7,6 +7,7 @@ from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from drf_json_api_atomic_operations.exceptions import UnprocessableEntity
 from drf_json_api_atomic_operations.parsers import AtomicOperationParser
 from drf_json_api_atomic_operations.renderers import AtomicResultRenderer
 
@@ -57,7 +58,7 @@ class AtomicOperationView(APIView):
                     "instance": serializer_class.Meta.model.objects.get(pk=kwargs["data"]["id"])
                 })
             except ObjectDoesNotExist:
-                raise ParseError([
+                raise UnprocessableEntity([
                     {
                         "id": "object-does-not-exist",
                         "detail": f'Object with id `{kwargs["data"]["id"]}` received for operation with index `{idx}` does not exist',
