@@ -37,6 +37,12 @@ class TestAtomicOperationParser(TestCase):
                             "title": "JSON API paints my bikeshed!"
                         }
                     }
+                }, {
+                    "op": "remove",
+                    "ref": {
+                        "id": "1",
+                        "type": "articles",
+                    }
                 }
             ]
         }
@@ -56,6 +62,12 @@ class TestAtomicOperationParser(TestCase):
                     "id": "1",
                     "type": "articles",
                     "title": "JSON API paints my bikeshed!"
+                }
+            },
+            {
+                "remove": {
+                    "id": "1",
+                    "type": "articles",
                 }
             }
         ]

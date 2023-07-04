@@ -1,15 +1,13 @@
-from typing import Dict, List, OrderedDict
+from typing import Dict, List
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db.transaction import atomic
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_json_api.views import ModelViewSet
 
 from drf_json_api_atomic_operations.parsers import AtomicOperationParser
 from drf_json_api_atomic_operations.renderers import AtomicResultRenderer
-from drf_json_api_atomic_operations.types import SerializerMapping
 
 
 class AtomicOperationView(APIView):
@@ -30,7 +28,7 @@ class AtomicOperationView(APIView):
         if self.serializer_classes:
             return self.serializer_classes
         else:
-            raise ImproperlyConfigured(f"You need to define the serializer classes. "
+            raise ImproperlyConfigured("You need to define the serializer classes. "
                                        "Otherwise serialization of json:api primary data is not possible.")
 
     def get_serializer_class(self, operation_code: str, resource_type: str):

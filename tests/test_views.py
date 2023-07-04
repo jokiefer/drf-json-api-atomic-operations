@@ -1,5 +1,4 @@
 import json
-from io import BytesIO
 
 from django.test import Client, RequestFactory, TestCase
 
