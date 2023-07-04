@@ -1,0 +1,24 @@
+name: Publish package distributions to PyPI
+on:
+  release:
+    types: [published]
+jobs:
+  pypi:
+    name: Publish package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: install setup tools
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+      - name: Build
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true

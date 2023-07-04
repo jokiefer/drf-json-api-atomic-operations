@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[UNRELEASED] - 2023-xx-xx
--------------------------
+[0.1.0] - 2023-07-04
+--------------------
 
+Added
+~~~~~
 
-
-
+* sequential handling for add, update and remove operation code
+* detailed error responses with indexed source pointing

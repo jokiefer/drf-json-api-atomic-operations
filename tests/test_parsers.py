@@ -4,7 +4,7 @@ from io import BytesIO
 from django.test import RequestFactory, TestCase
 from rest_framework.exceptions import ParseError
 
-from drf_json_api_atomic_operations.parsers import AtomicOperationParser
+from atomic_operations.parsers import AtomicOperationParser
 from tests.views import ConcretAtomicOperationView
 
 

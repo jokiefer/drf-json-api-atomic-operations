@@ -63,7 +63,6 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework_json_api.renderers.JSONRenderer",
-        "drf_json_api_atomic_operations.renderers.AtomicResultRenderer"
     ],
 
     "DEFAULT_METADATA_CLASS": "rest_framework_json_api.metadata.JSONAPIMetadata",

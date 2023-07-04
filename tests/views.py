@@ -1,4 +1,4 @@
-from drf_json_api_atomic_operations.views import AtomicOperationView
+from atomic_operations.views import AtomicOperationView
 from tests.serializers import BasicModelSerializer
 
 

@@ -3,22 +3,24 @@ from typing import Dict, List
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db.transaction import atomic
 from rest_framework import status
-from rest_framework.exceptions import ParseError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from drf_json_api_atomic_operations.exceptions import UnprocessableEntity
-from drf_json_api_atomic_operations.parsers import AtomicOperationParser
-from drf_json_api_atomic_operations.renderers import AtomicResultRenderer
+from atomic_operations.exceptions import UnprocessableEntity
+from atomic_operations.parsers import AtomicOperationParser
+from atomic_operations.renderers import AtomicResultRenderer
 
 
 class AtomicOperationView(APIView):
+    """View which handles JSON:API Atomic Operations extension https://jsonapi.org/ext/atomic/"""
+
     renderer_classes = [AtomicResultRenderer]
     parser_classes = [AtomicOperationParser]
 
     # only post method is allowed https://jsonapi.org/ext/atomic/#processing
     http_method_names = ["post"]
 
+    #
     serializer_classes: Dict = {}
 
     # TODO: proof how to check permissions for all operations
