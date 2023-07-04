@@ -215,7 +215,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "The resource identifier object with index 0 must contain an 'id' member",
+            "The resource identifier object with index 0 must contain an `id` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -236,7 +236,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "The resource identifier object with index 0 must contain an 'id' member",
+            "The resource identifier object with index 0 must contain an `id` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -257,7 +257,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "Received data of operation with index 0 is not a valid JSON:API Resource Identifier Object",
+            "Received data of operation with index 0 is not a valid JSON:API Operation Object",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -284,7 +284,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "Received document does not contain operations object data",
+            "Received document does not contain operations objects",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -296,7 +296,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "Received document does not contain operations object data",
+            "Received document does not contain operations objects",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -310,7 +310,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             ParseError,
-            "Received operations is not a valid JSON:API atomic operation request",
+            "Received operation objects is not a valid JSON:API atomic operation request",
             self.parser.parse,
             **{
                 "stream": stream,

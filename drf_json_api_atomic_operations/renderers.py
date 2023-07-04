@@ -36,11 +36,26 @@ class AtomicResultRenderer(JSONRenderer):
     media_type = 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'
     format = 'vnd.api+json;ext="https://jsonapi.org/ext/atomic'
 
+    def check_error(self, operation_result_data, accepted_media_type, renderer_context):
+        # primitive check if any operation has errors while parsing
+        status = operation_result_data.get("status")
+        try:
+            status = int(status)
+            if status >= 400 and status <= 600:
+                return self.render_errors([operation_result_data], accepted_media_type, renderer_context)
+        except Exception:
+            pass
+
     def render(self, data: List[OrderedDict], accepted_media_type=None, renderer_context=None):
         renderer_context = renderer_context or {"view": {}}
 
         atomic_results = []
         for operation_result_data in data:
+            has_error = self.check_error(
+                operation_result_data, accepted_media_type, renderer_context)
+            if has_error:
+                return has_error
+
             # pass in the resource name
             renderer_context["view"].resource_name = get_resource_type_from_serializer(
                 operation_result_data.serializer)
