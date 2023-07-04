@@ -158,7 +158,47 @@ class TestAtomicOperationView(TestCase):
                     "detail": "The resource identifier object with index 2 must contain an `id` member",
                     "status": "400",
                     "source": {
-                        "pointer": "/atomic:operations[2]/id"
+                        "pointer": "/atomic:operations/2/data/id"
+                    },
+                }
+            ]
+        }
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual(expected_error, error)
+
+    def test_view_exception_handling(self):
+        operations = [
+            {
+                "op": "update",
+                "data": {
+                    "id": "1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed2!"
+                    }
+                }
+            }
+        ]
+
+        data = {
+            "atomic:operations": operations
+        }
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type='application/vnd.api+json;ext="https://jsonapi.org/ext/atomic',
+
+            **{"HTTP_ACCEPT": 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'}
+        )
+        error = json.loads(response.content)
+        expected_error = {
+            "errors": [
+                {
+                    "id": "object-does-not-exist",
+                    "detail": "Object with id `1` received for operation with index `0` does not exist",
+                    "status": "422",
+                    "source": {
+                        "pointer": "/atomic:operations/0/data/id"
                     },
                 }
             ]

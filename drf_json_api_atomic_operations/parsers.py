@@ -44,7 +44,7 @@ class AtomicOperationParser(JSONParser):
                     "id": "missing-operation-code",
                     "detail": f"Received operation with index {idx} does not provide an operation code",
                     "source": {
-                        "pointer": f"/atomic:operations[{idx}]/op"
+                        "pointer": f"/atomic:operations/{idx}/op"
                     },
                     "status": "400"
                 }]
@@ -55,7 +55,7 @@ class AtomicOperationParser(JSONParser):
                     "id": "unknown-operation-code",
                     "detail": f"Unknown operation `{op}` received for operation with index {idx}",
                     "source": {
-                        "pointer": f"/atomic:operations[{idx}]/op"
+                        "pointer": f"/atomic:operations/{idx}/op"
                     },
                     "status": "400"
                 }]
@@ -73,7 +73,7 @@ class AtomicOperationParser(JSONParser):
                             "id": "ref-href-together",
                             "detail": f"using ref and href together on operation with index {idx} is not allowed.",
                             "source": {
-                                "pointer": f"/atomic:operations[{idx}]/href"
+                                "pointer": f"/atomic:operations/{idx}/href"
                             },
                             "status": "400"
                         }]
@@ -85,7 +85,7 @@ class AtomicOperationParser(JSONParser):
                             "id": "missing-ref-or-href",
                             "detail": f"either ref or href must be part of the remove operation with index {idx}",
                             "source": {
-                                "pointer": f"/atomic:operations[{idx}]"
+                                "pointer": f"/atomic:operations/{idx}"
                             },
                             "status": "400"
                         }]
@@ -99,7 +99,7 @@ class AtomicOperationParser(JSONParser):
                     "id": "invalid-operation-object",
                     "detail": f"Received data of operation with index {idx} is not a valid JSON:API Operation Object",
                     "source": {
-                        "pointer": f"/atomic:operations[{idx}]"
+                        "pointer": f"/atomic:operations/{idx}"
                     },
                     "status": "400"
                 }]
@@ -112,7 +112,7 @@ class AtomicOperationParser(JSONParser):
                         "id": "missing-id",
                         "detail": f"The resource identifier object with index {idx} must contain an `id` member",
                         "source": {
-                            "pointer": f"/atomic:operations[{idx}]/id"
+                            "pointer": f"/atomic:operations/{idx}/data/id"
                         },
                         "status": "400"
                     }]
@@ -135,7 +135,7 @@ class AtomicOperationParser(JSONParser):
                         "id": "missing-operation-objects",
                         "detail": "Received document does not contain operations objects",
                         "source": {
-                            "pointer": "/atomic:operations/"
+                            "pointer": "/atomic:operations"
                         },
                         "status": "400"
                     }]
@@ -151,7 +151,7 @@ class AtomicOperationParser(JSONParser):
                         "id": "invalid-operation-objects",
                         "detail": "Received operation objects is not a valid JSON:API atomic operation request",
                         "source": {
-                            "pointer": "/atomic:operations/"
+                            "pointer": "/atomic:operations"
                         },
                         "status": "400"
                     }]
