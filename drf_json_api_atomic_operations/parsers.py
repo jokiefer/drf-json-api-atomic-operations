@@ -40,7 +40,7 @@ class AtomicOperationParser(JSONParser):
         op = operation.get("op", None)
         if not op:
             raise ParseError(
-                f"Received operation with index {idx} does not provide an operation code.")
+                f"Received operation with index {idx} does not provide an operation code")
         if op not in ["add", "update", "remove"]:
             raise ParseError(
                 f"Unknown operation `{op}` received for operation with index {idx}")
@@ -52,21 +52,21 @@ class AtomicOperationParser(JSONParser):
 
             if ref and href:
                 raise ParseError(
-                    "using ref and href at the same time is not allowed.")
+                    f"using ref and href together on operation with index {idx} is not allowed.")
             elif not ref and not href:
                 raise ParseError(
-                    "either ref or href must be part of the remove operation")
+                    f"either ref or href must be part of the remove operation with index {idx}")
 
-    def check_primary_data(self, data: Dict, operation_code: str):
+    def check_primary_data(self, idx: int, data: Dict, operation_code: str):
         # Sanity check
         if not isinstance(data, dict):
             raise ParseError(
-                "Received data is not a valid JSON:API Resource Identifier Object"
+                f"Received data of operation with index {idx} is not a valid JSON:API Resource Identifier Object"
             )
 
         if not data.get("id") and operation_code in ("update", "remove"):
             raise ParseError(
-                "The resource identifier object must contain an 'id' member"
+                f"The resource identifier object with index {idx} must contain an 'id' member"
             )
 
     def parse_id_and_type(self, data):
@@ -98,7 +98,7 @@ class AtomicOperationParser(JSONParser):
             data = operation.get("data", operation.get(
                 "ref", operation.get("href")))
             operation_code = operation["op"]
-            self.check_primary_data(data, operation_code)
+            self.check_primary_data(idx, data, operation_code)
 
             _parsed_data = self.parse_id_and_type(data=data)
             _parsed_data.update(self.parse_attributes(data))
