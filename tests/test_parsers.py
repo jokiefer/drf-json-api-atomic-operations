@@ -2,8 +2,8 @@ import json
 from io import BytesIO
 
 from django.test import RequestFactory, TestCase
-from rest_framework.exceptions import ParseError
 
+from atomic_operations.exceptions import JsonApiParseError
 from atomic_operations.parsers import AtomicOperationParser
 from tests.views import ConcretAtomicOperationView
 
@@ -15,13 +15,13 @@ class TestAtomicOperationParser(TestCase):
         self.parser = AtomicOperationParser()
         self.parser_context = {"request": self.factory.post(
             "/"), "kwargs": {}, "view": ConcretAtomicOperationView()}
+        self.maxDiff = None
 
     def test_parse(self):
         data = {
             "atomic:operations": [
                 {
                     "op": "add",
-                    "href": "/blogPosts",
                     "data": {
                         "type": "articles",
                         "attributes": {
@@ -30,7 +30,6 @@ class TestAtomicOperationParser(TestCase):
                     }
                 }, {
                     "op": "update",
-                    "href": "/blogPosts",
                     "data": {
                         "id": "1",
                         "type": "articles",
@@ -44,6 +43,28 @@ class TestAtomicOperationParser(TestCase):
                         "id": "1",
                         "type": "articles",
                     }
+                }, {
+                    "op": "update",
+                    "ref": {
+                        "type": "articles",
+                        "id": "13",
+                        "relationship": "author"
+                    },
+                    "data": {
+                        "type": "people",
+                        "id": "9"
+                    }
+                }, {
+                    "op": "update",
+                    "ref": {
+                        "type": "articles",
+                        "id": "13",
+                        "relationship": "tags"
+                    },
+                    "data": [
+                        {"type": "tags", "id": "2"},
+                        {"type": "tags", "id": "3"}
+                    ]
                 }
             ]
         }
@@ -70,6 +91,18 @@ class TestAtomicOperationParser(TestCase):
                     "id": "1",
                     "type": "articles",
                 }
+            }, {
+                "update": {
+                    "id": "13",
+                    "type": "articles",
+                    "author": {"type": "people", "id": "9"}
+                }
+            }, {
+                "update": {
+                    "id": "13",
+                    "type": "articles",
+                    "tags": [{'type': 'tags', 'id': '2'}, {'type': 'tags', 'id': '3'}]
+                }
             }
         ]
         self.assertEqual(expected_result, result)
@@ -79,7 +112,6 @@ class TestAtomicOperationParser(TestCase):
             "atomic:operations": [
                 {
                     "op": "add",
-                    "href": "/blogPosts",
                     "data": {
                         "type": "articles",
                         "attributes": {
@@ -88,7 +120,6 @@ class TestAtomicOperationParser(TestCase):
                     }
                 }, {
                     "op": "unknown",
-                    "href": "/blogPosts",
                     "data": {
                         "id": "1",
                         "type": "articles",
@@ -107,8 +138,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "Unknown operation `unknown` received for operation with index 1",
+            JsonApiParseError,
+            "Unknown operation `unknown` received",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -121,7 +152,6 @@ class TestAtomicOperationParser(TestCase):
             "atomic:operations": [
                 {
                     "op": "add",
-                    "href": "/blogPosts",
                     "data": {
                         "type": "articles",
                         "attributes": {
@@ -129,7 +159,6 @@ class TestAtomicOperationParser(TestCase):
                         }
                     }
                 }, {
-                    "href": "/blogPosts",
                     "data": {
                         "id": "1",
                         "type": "articles",
@@ -148,8 +177,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "Received operation with index 1 does not provide an operation code",
+            JsonApiParseError,
+            "Received operation does not provide an operation code",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -157,7 +186,7 @@ class TestAtomicOperationParser(TestCase):
             }
         )
 
-    def test_missing_ref_href_on_remove(self):
+    def test_missing_ref_on_remove(self):
         data = {
             "atomic:operations": [
                 {
@@ -168,8 +197,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "either ref or href must be part of the remove operation with index 0",
+            JsonApiParseError,
+            "`ref` must be part of remove operation",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -177,23 +206,20 @@ class TestAtomicOperationParser(TestCase):
             }
         )
 
-    def test_using_ref_href_together_on_remove(self):
+    def test_using_href(self):
         data = {
             "atomic:operations": [
                 {
                     "op": "remove",
                     "href": "/somearticle",
-                    "ref": {
-                        "id": "1",
-                        "type": "articles",
-                    }
+
                 }
             ]
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "using ref and href together on operation with index 0 is not allowed",
+            JsonApiParseError,
+            "Received operation using `href` to refencing objects which is not implemented by this api. Use `ref` instead.",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -214,8 +240,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "The resource identifier object with index 0 must contain an `id` member",
+            JsonApiParseError,
+            "The resource identifier object must contain an `id` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -235,8 +261,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "The resource identifier object with index 0 must contain an `id` member",
+            JsonApiParseError,
+            "The resource identifier object must contain an `id` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -256,8 +282,8 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
-            "Received data of operation with index 0 is not a valid JSON:API Operation Object",
+            JsonApiParseError,
+            "primary data object musst be present",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -283,7 +309,7 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
+            JsonApiParseError,
             "Received document does not contain operations objects",
             self.parser.parse,
             **{
@@ -295,7 +321,7 @@ class TestAtomicOperationParser(TestCase):
         data = []
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
+            JsonApiParseError,
             "Received document does not contain operations objects",
             self.parser.parse,
             **{
@@ -309,7 +335,7 @@ class TestAtomicOperationParser(TestCase):
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
-            ParseError,
+            JsonApiParseError,
             "Received operation objects is not a valid JSON:API atomic operation request",
             self.parser.parse,
             **{

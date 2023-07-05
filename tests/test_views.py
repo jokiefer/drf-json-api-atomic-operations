@@ -13,6 +13,7 @@ class TestAtomicOperationView(TestCase):
         self.view = ConcretAtomicOperationView
         self.client = Client()
 
+        self.maxDiff = None
     # def test_view(self):
     #     data = {
     #         "atomic:operations": [
@@ -155,10 +156,10 @@ class TestAtomicOperationView(TestCase):
             "errors": [
                 {
                     "id": "missing-id",
-                    "detail": "The resource identifier object with index 2 must contain an `id` member",
+                    "detail": "The resource identifier object must contain an `id` member",
                     "status": "400",
                     "source": {
-                        "pointer": "/atomic:operations/2/data/id"
+                        "pointer": "/atomic:operations/2/ref"
                     },
                 }
             ]
