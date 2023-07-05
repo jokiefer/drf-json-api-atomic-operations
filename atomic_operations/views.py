@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from atomic_operations.consts import ATOMIC_OPERATIONS
 from atomic_operations.exceptions import UnprocessableEntity
 from atomic_operations.parsers import AtomicOperationParser
 from atomic_operations.renderers import AtomicResultRenderer
@@ -65,7 +66,7 @@ class AtomicOperationView(APIView):
                         "id": "object-does-not-exist",
                         "detail": f'Object with id `{kwargs["data"]["id"]}` received for operation with index `{idx}` does not exist',
                         "source": {
-                            "pointer": f"/atomic:operations/{idx}/data/id"
+                            "pointer": f"/{ATOMIC_OPERATIONS}/{idx}/data/id"
                         },
                         "status": "422"
                     }

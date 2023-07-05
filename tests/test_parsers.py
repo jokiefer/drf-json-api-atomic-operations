@@ -3,6 +3,7 @@ from io import BytesIO
 
 from django.test import RequestFactory, TestCase
 
+from atomic_operations.consts import ATOMIC_OPERATIONS
 from atomic_operations.exceptions import JsonApiParseError
 from atomic_operations.parsers import AtomicOperationParser
 from tests.views import ConcretAtomicOperationView
@@ -19,7 +20,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_parse(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "add",
                     "data": {
@@ -109,7 +110,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_unsupported_operation_code(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "add",
                     "data": {
@@ -149,7 +150,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_missing_operation_code(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "add",
                     "data": {
@@ -188,7 +189,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_missing_ref_on_remove(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "remove",
 
@@ -208,7 +209,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_using_href(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "remove",
                     "href": "/somearticle",
@@ -229,13 +230,13 @@ class TestAtomicOperationParser(TestCase):
 
     def test_primary_data_without_id(self):
         data = {
-            "atomic:operations": [
-                {
-                    "op": "remove",
-                    "ref": {
-                        "type": "articles",
-                    }
-                }
+            ATOMIC_OPERATIONS: [
+               {
+                   "op": "remove",
+                   "ref": {
+                       "type": "articles",
+                   }
+               }
             ]
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
@@ -250,7 +251,7 @@ class TestAtomicOperationParser(TestCase):
         )
 
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "update",
                     "ref": {
@@ -272,7 +273,7 @@ class TestAtomicOperationParser(TestCase):
 
     def test_primary_data(self):
         data = {
-            "atomic:operations": [
+            ATOMIC_OPERATIONS: [
                 {
                     "op": "update",
                     "id": "1",
@@ -331,7 +332,7 @@ class TestAtomicOperationParser(TestCase):
         )
 
         data = {
-            "atomic:operations": {}
+            ATOMIC_OPERATIONS: {}
         }
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(

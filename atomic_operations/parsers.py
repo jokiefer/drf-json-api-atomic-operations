@@ -6,6 +6,7 @@ from typing import Dict
 from rest_framework_json_api import renderers
 from rest_framework_json_api.parsers import JSONParser
 
+from atomic_operations.consts import ATOMIC_CONTENT_TYPE, ATOMIC_OPERATIONS
 from atomic_operations.exceptions import (
     InvalidPrimaryDataType,
     JsonApiParseError,
@@ -37,7 +38,7 @@ class AtomicOperationParser(JSONParser):
     We extract the attributes so that DRF serializers can work as normal.
     """
 
-    media_type = 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'
+    media_type = ATOMIC_CONTENT_TYPE
     renderer_class = renderers.JSONRenderer
 
     def check_resource_identifier_object(self, idx: int, resource_identifier_object: Dict, operation_code: str):
@@ -45,13 +46,13 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="missing-id",
                 detail="The resource identifier object must contain an `id` member",
-                pointer=f"/atomic:operations/{idx}/{'data' if operation_code == 'update' else 'ref'}"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/{'data' if operation_code == 'update' else 'ref'}"
             )
         if not resource_identifier_object.get("type"):
             raise JsonApiParseError(
                 id="missing-type",
                 detail="The resource identifier object must contain an `type` member",
-                pointer=f"/atomic:operations/{idx}/{'data' if operation_code == 'update' else 'ref'}"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/{'data' if operation_code == 'update' else 'ref'}"
             )
 
     def check_add_operation(self, idx, data):
@@ -68,7 +69,7 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="missing-relationship-naming",
                 detail="relationship must be named by the `relationship` attribute",
-                pointer=f"/atomic:operations/{idx}/ref"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/ref"
             )
         try:
             data = operation["data"]
@@ -107,7 +108,7 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="missing-ref-attribute",
                 detail="`ref` must be part of remove operation",
-                pointer=f"/atomic:operations/{idx}"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}"
             )
         self.check_resource_identifier_object(idx, ref, "remove")
 
@@ -121,7 +122,7 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="missing-operation-code",
                 detail="Received operation does not provide an operation code",
-                pointer=f"/atomic:operations/{idx}/op"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/op"
             )
 
         if href:
@@ -129,7 +130,7 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="not-implemented",
                 detail="Received operation using `href` to refencing objects which is not implemented by this api. Use `ref` instead.",
-                pointer=f"/atomic:operations/{idx}/href"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/href"
             )
 
         if operation_code == "add":
@@ -144,7 +145,7 @@ class AtomicOperationParser(JSONParser):
             raise JsonApiParseError(
                 id="unknown-operation-code",
                 detail=f"Unknown operation `{operation_code}` received",
-                pointer=f"/atomic:operations/{idx}/op"
+                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/op"
             )
 
     def parse_id_and_type(self, resource_identifier_object):
@@ -154,19 +155,19 @@ class AtomicOperationParser(JSONParser):
         return parsed_data
 
     def check_root(self, result):
-        if not isinstance(result, dict) or "atomic:operations" not in result:
+        if not isinstance(result, dict) or ATOMIC_OPERATIONS not in result:
             raise JsonApiParseError(
                 id="missing-operation-objects",
                 detail="Received document does not contain operations objects",
-                pointer="/atomic:operations"
+                pointer=f"/{ATOMIC_OPERATIONS}"
             )
 
         # Sanity check
-        if not isinstance(result.get("atomic:operations"), list):
+        if not isinstance(result.get(ATOMIC_OPERATIONS), list):
             raise JsonApiParseError(
                 id="invalid-operation-objects",
                 detail="Received operation objects is not a valid JSON:API atomic operation request",
-                pointer="/atomic:operations"
+                pointer=f"/{ATOMIC_OPERATIONS}"
             )
 
     def parse_operation(self, resource_identifier_object, result):
@@ -185,7 +186,7 @@ class AtomicOperationParser(JSONParser):
 
         # Construct the return data
         parsed_data = []
-        for idx, operation in enumerate(result["atomic:operations"]):
+        for idx, operation in enumerate(result[ATOMIC_OPERATIONS]):
 
             self.check_operation(idx, operation)
 

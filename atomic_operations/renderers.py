@@ -7,6 +7,12 @@ from typing import List, OrderedDict
 from rest_framework_json_api.renderers import JSONRenderer
 from rest_framework_json_api.utils import get_resource_type_from_serializer
 
+from atomic_operations.consts import (
+    ATOMIC_CONTENT_TYPE,
+    ATOMIC_MEDIA_TYPE,
+    ATOMIC_RESULTS,
+)
+
 
 class AtomicResultRenderer(JSONRenderer):
     """
@@ -33,8 +39,8 @@ class AtomicResultRenderer(JSONRenderer):
         }
     """
 
-    media_type = 'application/vnd.api+json;ext="https://jsonapi.org/ext/atomic'
-    format = 'vnd.api+json;ext="https://jsonapi.org/ext/atomic'
+    media_type = ATOMIC_CONTENT_TYPE
+    format = ATOMIC_MEDIA_TYPE
 
     def check_error(self, operation_result_data, accepted_media_type, renderer_context):
         # primitive check if any operation has errors while parsing
@@ -65,6 +71,6 @@ class AtomicResultRenderer(JSONRenderer):
 
         atomic_results_str = f"[{','.join(atomic_results)}]"
 
-        rendered_content = '{"atomic:results":' + atomic_results_str + '}'
+        rendered_content = '{"' + ATOMIC_RESULTS + '":' + atomic_results_str + '}'
 
         return rendered_content.encode()

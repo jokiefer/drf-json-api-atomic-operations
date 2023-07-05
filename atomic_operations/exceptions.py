@@ -2,6 +2,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
 
+from atomic_operations.consts import ATOMIC_OPERATIONS
+
 
 class UnprocessableEntity(APIException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -34,7 +36,7 @@ class MissingPrimaryData(JsonApiParseError):
         super().__init__(
             "missing-primary-data",
             "primary data object musst be present",
-            f"/atomic:operations/{idx}"
+            f"/{ATOMIC_OPERATIONS}/{idx}"
         )
 
 
@@ -43,5 +45,5 @@ class InvalidPrimaryDataType(JsonApiParseError):
         super().__init__(
             id="invalid-primary-data-type",
             detail=f"primary data object musst be an {data_type}",
-            pointer=f"/atomic:operations/{idx}/data"
+            pointer=f"/{ATOMIC_OPERATIONS}/{idx}/data"
         )
