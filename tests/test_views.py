@@ -19,38 +19,8 @@ class TestAtomicOperationView(TestCase):
         self.client = Client()
 
         self.maxDiff = None
-    # def test_view(self):
-    #     data = {
-    #         "atomic:operations": [
-    #             {
-    #                 "op": "add",
-    #                 "data": {
-    #                     "type": "BasicModel",
-    #                     "attributes": {
-    #                         "text": "JSON API paints my bikeshed!"
-    #                     }
-    #                 }
-    #             }, {
-    #                 "op": "update",
-    #                 "data": {
-    #                     "id": "1",
-    #                     "type": "BasicModel",
-    #                     "attributes": {
-    #                         "text": "JSON API paints my bikeshed2!"
-    #                     }
-    #                 }
-    #             }
-    #         ]
-    #     }
-    #     post_request = self.factory.post(
-    #         path="/",
-    #         data=data,
-    #         content_type=ATOMIC_MEDIA_TYPE,
-    #         **{"HTTP_ACCEPT": ATOMIC_MEDIA_TYPE}
-    #     )
-    #     response = self.view.as_view()(post_request)
 
-    def test_view_processing(self):
+    def test_view_processing_with_valid_request(self):
         operations = [
             {
                 "op": "add",
@@ -108,29 +78,39 @@ class TestAtomicOperationView(TestCase):
                     "type": "BasicModel",
                 }
             },
-
-            # {
-            #     "op": "update",
-            #     "ref": {
-            #         "id": "2",
-            #         "type": "BasicModel",
-            #         "relationship": "to_one"
-            #     },
-            #     "data": {"type": "RelatedModel", "id": "1"}
-            # }, {
-            #     "op": "update",
-            #     "ref": {
-            #         "id": "2",
-            #         "type": "BasicModel",
-            #         "relationship": "to_many"
-            #     },
-            #     "data": [{"type": "RelatedModelTwo", "id": "1"}, {"type": "RelatedModelTwo", "id": "2"}]
-            # }
+            {
+                "op": "update",
+                "ref": {
+                    "id": "2",
+                    "type": "BasicModel",
+                    "relationship": "to_one"
+                },
+                "data": {"type": "RelatedModel", "id": "1"}
+            }, {
+                "op": "update",
+                "ref": {
+                    "id": "2",
+                    "type": "BasicModel",
+                    "relationship": "to_many"
+                },
+                "data": [{"type": "RelatedModelTwo", "id": "1"}, {"type": "RelatedModelTwo", "id": "2"}]
+            }
         ]
 
         data = {
             ATOMIC_OPERATIONS: operations
         }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        self.assertEqual(200, response.status_code)
 
         expected_result = {
             ATOMIC_RESULTS: [
@@ -191,20 +171,18 @@ class TestAtomicOperationView(TestCase):
             ]
         }
 
-        response = self.client.post(
-            path="/",
-            data=data,
-            content_type=ATOMIC_CONTENT_TYPE,
+        self.assertDictEqual(expected_result,
+                             json.loads(response.content))
 
-            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
-        )
-
+        # check db content
         self.assertEqual(1, BasicModel.objects.count())
         self.assertEqual(1, RelatedModel.objects.count())
         self.assertEqual(2, RelatedModelTwo.objects.count())
 
-        self.assertDictEqual(expected_result,
-                             json.loads(response.content))
+        self.assertEqual(RelatedModel.objects.get(pk=1),
+                         BasicModel.objects.get(pk=2).to_one)
+        self.assertEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                         BasicModel.objects.get(pk=2).to_many)
 
     def test_parser_exception_with_pointer(self):
         operations = [

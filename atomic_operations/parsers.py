@@ -5,6 +5,7 @@ from typing import Dict
 
 from rest_framework_json_api import renderers
 from rest_framework_json_api.parsers import JSONParser
+from rest_framework_json_api.utils import undo_format_field_name
 
 from atomic_operations.consts import ATOMIC_CONTENT_TYPE, ATOMIC_OPERATIONS
 from atomic_operations.exceptions import (
@@ -193,9 +194,15 @@ class AtomicOperationParser(JSONParser):
             if operation["op"] == "update" and operation.get("ref"):
                 # special case relation update
                 ref: Dict = operation["ref"]
-                relationship = ref.pop("relationship")
-                _parsed_data = self.parse_id_and_type(ref)
-                _parsed_data[relationship] = operation["data"]
+                ref["relationships"] = {
+                    ref.pop("relationship"): {
+                        "data": operation["data"]
+                    }
+                }
+                _parsed_data = self.parse_operation(
+                    resource_identifier_object=ref,
+                    result=result
+                )
 
             else:
                 _parsed_data = self.parse_operation(

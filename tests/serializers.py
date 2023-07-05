@@ -5,17 +5,17 @@ from tests.models import BasicModel, RelatedModel, RelatedModelTwo
 
 class BasicModelSerializer(ModelSerializer):
     class Meta:
-        fields = ("text",)
+        fields = "__all__"
         model = BasicModel
 
 
 class RelatedModelSerializer(ModelSerializer):
     class Meta:
-        fields = ("text",)
+        fields = "__all__"
         model = RelatedModel
 
 
 class RelatedModelTwoSerializer(ModelSerializer):
     class Meta:
-        fields = ("text",)
+        fields = "__all__"
         model = RelatedModelTwo

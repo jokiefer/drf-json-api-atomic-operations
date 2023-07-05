@@ -83,6 +83,7 @@ class AtomicOperationView(APIView):
             'request': self.request,
             'format': self.format_kwarg,
             'view': self
+
         }
 
     def post(self, request, *args, **kwargs):
@@ -99,11 +100,16 @@ class AtomicOperationView(APIView):
                     idx=idx,
                     data=obj,
                     operation_code=op_code,
-                    resource_type=obj["type"]
+                    resource_type=obj["type"],
+                    partial=True if op_code == "update" else False
                 )
                 if op_code in ["add", "update"]:
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
+                    # FIXME: check if it is just a relationship update
+                    if op_code == "update" and "ref" in obj:
+                        # relation update. No response data
+                        continue
                     response_data.append(serializer.data)
                 else:
                     # remove
