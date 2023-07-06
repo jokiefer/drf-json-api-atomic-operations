@@ -271,6 +271,27 @@ class TestAtomicOperationParser(TestCase):
             }
         )
 
+        data = {
+            ATOMIC_OPERATIONS: [
+                {
+                    "op": "update",
+                    "data": {
+                        "type": "articles",
+                    }
+                }
+            ]
+        }
+        stream = BytesIO(json.dumps(data).encode("utf-8"))
+        self.assertRaisesRegex(
+            JsonApiParseError,
+            "The resource identifier object must contain an `id` member",
+            self.parser.parse,
+            **{
+                "stream": stream,
+                "parser_context": self.parser_context
+            }
+        )
+
     def test_primary_data(self):
         data = {
             ATOMIC_OPERATIONS: [

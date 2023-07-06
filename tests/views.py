@@ -12,5 +12,11 @@ class ConcretAtomicOperationView(AtomicOperationView):
         "update:BasicModel": BasicModelSerializer,
         "remove:BasicModel": BasicModelSerializer,
         "add:RelatedModel": RelatedModelSerializer,
+        "update:RelatedModel": RelatedModelSerializer,
         "add:RelatedModelTwo": RelatedModelTwoSerializer,
+
     }
+
+
+class BulkAtomicOperationView(ConcretAtomicOperationView):
+    sequential = False

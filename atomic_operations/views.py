@@ -24,6 +24,9 @@ class AtomicOperationView(APIView):
     #
     serializer_classes: Dict = {}
 
+    sequential = True
+    response_data: List[Dict] = []
+
     # TODO: proof how to check permissions for all operations
     # permission_classes = TODO
     # call def check_permissions for `add` operation
@@ -89,30 +92,92 @@ class AtomicOperationView(APIView):
     def post(self, request, *args, **kwargs):
         return self.perform_operations(request.data)
 
+    def handle_sequential(self, serializer, operation_code):
+        if operation_code in ["add", "update", "update-relationship"]:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            if operation_code != "update-relationship":
+                self.response_data.append(serializer.data)
+        else:
+            # remove
+            serializer.instance.delete()
+
+    def perform_bulk_create(self, bulk_operation_data):
+        objs = []
+        model_class = bulk_operation_data["serializer_collection"][0].Meta.model
+        for _serializer in bulk_operation_data["serializer_collection"]:
+            _serializer.is_valid(raise_exception=True)
+            instance = model_class(**_serializer.validated_data)
+            objs.append(instance)
+            self.response_data.append(
+                _serializer.__class__(instance=instance).data)
+        model_class.objects.bulk_create(
+            objs)
+
+    def perform_bulk_delete(self, bulk_operation_data):
+        obj_ids = []
+        for _serializer in bulk_operation_data["serializer_collection"]:
+            obj_ids.append(_serializer.instance.pk)
+            self.response_data.append(_serializer.data)
+        bulk_operation_data["serializer_collection"][0].Meta.model.objects.filter(
+            pk__in=obj_ids).delete()
+
+    def handle_bulk(self, serializer, current_operation_code, bulk_operation_data):
+        bulk_operation_data["serializer_collection"].append(serializer)
+        if bulk_operation_data["next_operation_code"] != current_operation_code or bulk_operation_data["next_resource_type"] != serializer.initial_data["type"]:
+            if current_operation_code == "add":
+                self.perform_bulk_create(bulk_operation_data)
+            elif current_operation_code == "delete":
+                self.perform_bulk_delete(bulk_operation_data)
+            else:
+                # TODO: update in bulk requires more logic cause it could be a partial update and every field differs pers instance.
+                # Then we can't do a bulk operation. This is only possible for instances which changes the same field(s).
+                # Maybe the anylsis of this takes longer than simple handling updates in sequential mode.
+                # For now we handle updates always in sequential mode
+                self.handle_sequential(
+                    bulk_operation_data["serializer_collection"][0], current_operation_code)
+            bulk_operation_data["serializer_collection"] = []
+
     def perform_operations(self, parsed_operations: List[Dict]):
-        response_data: List[Dict] = []
+        self.response_data = []  # reset local response data storage
+
+        bulk_operation_data = {
+            "serializer_collection": [],
+            "next_operation_code": "",
+            "next_resource_type": ""
+        }
+
         with atomic():
+
             for idx, operation in enumerate(parsed_operations):
-                op_code = next(iter(operation))
-                obj = operation[op_code]
-                # TODO: collect operations of same op_code and resource type to support bulk_create | bulk_update | filter(id__in=[1,2,3]).delete()
+                operation_code = next(iter(operation))
+                obj = operation[operation_code]
+
                 serializer = self.get_serializer(
                     idx=idx,
                     data=obj,
-                    operation_code="update" if op_code == "update-relationship" else op_code,
+                    operation_code="update" if operation_code == "update-relationship" else operation_code,
                     resource_type=obj["type"],
-                    partial=True if "update" in op_code else False
+                    partial=True if "update" in operation_code else False
                 )
-                if op_code in ["add", "update", "update-relationship"]:
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save()
-                    # FIXME: check if it is just a relationship update
-                    if op_code == "update-relationship":
-                        # relation update. No response data
-                        continue
-                    response_data.append(serializer.data)
-                else:
-                    # remove
-                    serializer.instance.delete()
 
-        return Response(response_data, status=status.HTTP_200_OK if response_data else status.HTTP_204_NO_CONTENT)
+                if self.sequential:
+                    self.handle_sequential(serializer, operation_code)
+                else:
+                    is_last_iter = parsed_operations.__len__() == idx + 1
+                    if is_last_iter:
+                        bulk_operation_data["next_operation_code"] = ""
+                        bulk_operation_data["next_resource_type"] = ""
+                    else:
+                        next_operation = parsed_operations[idx + 1]
+                        bulk_operation_data["next_operation_code"] = next(
+                            iter(next_operation))
+                        bulk_operation_data["next_resource_type"] = next_operation[bulk_operation_data["next_operation_code"]]["type"]
+
+                    self.handle_bulk(
+                        serializer=serializer,
+                        current_operation_code=operation_code,
+                        bulk_operation_data=bulk_operation_data
+                    )
+
+        return Response(self.response_data, status=status.HTTP_200_OK if self.response_data else status.HTTP_204_NO_CONTENT)

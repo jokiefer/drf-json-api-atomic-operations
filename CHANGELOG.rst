@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+[0.2.0] - 2023-07-xx
+--------------------
+
+Added
+~~~~~
+
+* bulk operating for `add` and `delete` operations
+
+Fixed
+~~~~~
+
+* adds `check_resource_identifier_object` check on parser to check update operation correctly
+
+
 [0.2.0] - 2023-07-06
 --------------------
 
