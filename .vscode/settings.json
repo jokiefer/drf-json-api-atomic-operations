@@ -17,5 +17,8 @@
   },
   "[python]": {
     "editor.defaultFormatter": "ms-python.autopep8"
+  },
+  "files.associations": {
+    "*.yaml": "home-assistant"
   }
 }

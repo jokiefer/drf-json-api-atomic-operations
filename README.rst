@@ -20,6 +20,8 @@ Implemented Features
 ~~~~~~~~~~~~~~~~~~~~
 
 * creating, updating, removing multiple resources in a single request (sequential db calls)
+* `Updating To-One Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships>`_
+* `Updating To-Many Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-many-relationships>`_
 * error reporting with json pointer to the concrete operation and the wrong attributes
 
 
@@ -29,6 +31,3 @@ ToDo
 * permission handling
 * use django bulk operations to optimize db execution time
 * `local identity (lid) <https://jsonapi.org/ext/atomic/#operation-objects>`_ handling
-* `Updating To-One Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships>`_
-* `Updating To-Many Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-many-relationships>`_
-
