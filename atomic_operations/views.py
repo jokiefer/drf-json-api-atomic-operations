@@ -99,15 +99,15 @@ class AtomicOperationView(APIView):
                 serializer = self.get_serializer(
                     idx=idx,
                     data=obj,
-                    operation_code=op_code,
+                    operation_code="update" if op_code == "update-relationship" else op_code,
                     resource_type=obj["type"],
-                    partial=True if op_code == "update" else False
+                    partial=True if "update" in op_code else False
                 )
-                if op_code in ["add", "update"]:
+                if op_code in ["add", "update", "update-relationship"]:
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
                     # FIXME: check if it is just a relationship update
-                    if op_code == "update" and "ref" in obj:
+                    if op_code == "update-relationship":
                         # relation update. No response data
                         continue
                     response_data.append(serializer.data)

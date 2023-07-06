@@ -204,6 +204,8 @@ class AtomicOperationParser(JSONParser):
                     result=result
                 )
 
+                operation_code = f'{operation["op"]}-relationship'
+
             else:
                 _parsed_data = self.parse_operation(
                     resource_identifier_object=operation.get(
@@ -211,9 +213,10 @@ class AtomicOperationParser(JSONParser):
                     ),
                     result=result
                 )
+                operation_code = operation["op"]
 
             parsed_data.append({
-                operation["op"]: _parsed_data
+                operation_code: _parsed_data
             })
 
         return parsed_data

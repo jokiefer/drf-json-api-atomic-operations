@@ -93,13 +93,13 @@ class TestAtomicOperationParser(TestCase):
                     "type": "articles",
                 }
             }, {
-                "update": {
+                "update-relationship": {
                     "id": "13",
                     "type": "articles",
                     "author": {"type": "people", "id": "9"}
                 }
             }, {
-                "update": {
+                "update-relationship": {
                     "id": "13",
                     "type": "articles",
                     "tags": [{'type': 'tags', 'id': '2'}, {'type': 'tags', 'id': '3'}]

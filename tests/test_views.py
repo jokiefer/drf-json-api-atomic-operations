@@ -117,9 +117,14 @@ class TestAtomicOperationView(TestCase):
                 {
                     "data": {
                         "id": "1",
+
                         "type": "BasicModel",
                         "attributes": {
                             "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
                         }
                     }
                 },
@@ -129,6 +134,10 @@ class TestAtomicOperationView(TestCase):
                         "type": "BasicModel",
                         "attributes": {
                             "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
                         }
                     }
                 },
@@ -165,7 +174,12 @@ class TestAtomicOperationView(TestCase):
                         "type": "BasicModel",
                         "attributes": {
                             "text": "JSON API paints my bikeshed2!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
                         }
+
                     }
                 },
             ]
@@ -181,8 +195,8 @@ class TestAtomicOperationView(TestCase):
 
         self.assertEqual(RelatedModel.objects.get(pk=1),
                          BasicModel.objects.get(pk=2).to_one)
-        self.assertEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
-                         BasicModel.objects.get(pk=2).to_many)
+        self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                                 BasicModel.objects.get(pk=2).to_many.all())
 
     def test_parser_exception_with_pointer(self):
         operations = [
