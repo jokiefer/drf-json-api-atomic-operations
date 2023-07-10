@@ -19,7 +19,7 @@ See the `usage <https://drf-json-api-atomic-operations.readthedocs.io/en/latest/
 Implemented Features
 ~~~~~~~~~~~~~~~~~~~~
 
-* creating, updating, removing multiple resources in a single request (sequential db calls)
+* creating, updating, removing multiple resources in a single request (sequential db calls optional bulk db calls for create and delete)
 * `Updating To-One Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships>`_
 * `Updating To-Many Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-many-relationships>`_
 * error reporting with json pointer to the concrete operation and the wrong attributes
@@ -29,5 +29,4 @@ ToDo
 ~~~~
 
 * permission handling
-* use django bulk operations to optimize db execution time
 * `local identity (lid) <https://jsonapi.org/ext/atomic/#operation-objects>`_ handling

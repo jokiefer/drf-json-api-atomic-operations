@@ -74,3 +74,18 @@ Now you can call the api like below.
          }
       }]
    }
+
+
+Bulk operating
+==============
+
+By default all operations are sequential db calls. This package provides also bulk operating for creating and deleting resources. To activate it you need to configure the following.
+
+
+.. code-block:: python
+   
+   from atomic_operations.views import AtomicOperationView
+
+   class ConcretAtomicOperationView(AtomicOperationView):
+
+      sequential = False
