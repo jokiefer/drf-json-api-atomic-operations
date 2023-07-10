@@ -198,6 +198,155 @@ class TestAtomicOperationView(TestCase):
         self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
                                  BasicModel.objects.get(pk=2).to_many.all())
 
+    def test_bulk_view_processing_with_valid_request(self):
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "type": "RelatedModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "update",
+                "data": {
+                    "id": "1",
+                    "type": "RelatedModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!2"
+                    }
+                }
+            }
+        ]
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/bulk",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        self.assertEqual(200, response.status_code)
+
+        expected_result = {
+            ATOMIC_RESULTS: [
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "2",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                }, {
+                    "data": {
+                        "id": "3",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "4",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!2"
+                        }
+                    }
+                }
+            ]
+        }
+
+        self.assertDictEqual(expected_result,
+                             json.loads(response.content))
+
+        # check db content
+        self.assertEqual(4, BasicModel.objects.count())
+
     def test_parser_exception_with_pointer(self):
         operations = [
             {

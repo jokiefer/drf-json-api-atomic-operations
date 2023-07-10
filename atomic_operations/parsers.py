@@ -103,6 +103,7 @@ class AtomicOperationParser(JSONParser):
                 raise MissingPrimaryData(idx)
             elif not isinstance(data, dict):
                 raise InvalidPrimaryDataType(idx, "object")
+            self.check_resource_identifier_object(idx, data, operation["op"])
 
     def check_remove_operation(self, idx, ref):
         if not ref:
