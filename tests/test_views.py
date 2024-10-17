@@ -1,5 +1,6 @@
 import json
 
+from django import VERSION
 from django.test import Client, RequestFactory, TestCase
 
 from atomic_operations.consts import (
@@ -195,8 +196,15 @@ class TestAtomicOperationView(TestCase):
 
         self.assertEqual(RelatedModel.objects.get(pk=1),
                          BasicModel.objects.get(pk=2).to_one)
-        self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
-                                 BasicModel.objects.get(pk=2).to_many.all())
+
+        major, minor, _, _, _ = VERSION
+        if int(major) <= 4 and int(minor) <= 1:
+            self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                                     BasicModel.objects.get(pk=2).to_many.all())
+        else:
+            # with django 4.2 TransactionTestCase.assertQuerysetEqual() is deprecated in favor of assertQuerySetEqual().
+            self.assertQuerySetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                                     BasicModel.objects.get(pk=2).to_many.all())
 
     def test_bulk_view_processing_with_valid_request(self):
         operations = [
