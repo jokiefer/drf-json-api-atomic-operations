@@ -195,7 +195,7 @@ class TestAtomicOperationView(TestCase):
 
         self.assertEqual(RelatedModel.objects.get(pk=1),
                          BasicModel.objects.get(pk=2).to_one)
-        self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+        self.assertQuerySetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
                                  BasicModel.objects.get(pk=2).to_many.all())
 
     def test_bulk_view_processing_with_valid_request(self):

@@ -109,10 +109,11 @@ class AtomicOperationView(APIView):
             _serializer.is_valid(raise_exception=True)
             instance = model_class(**_serializer.validated_data)
             objs.append(instance)
-            self.response_data.append(
-                _serializer.__class__(instance=instance).data)
         model_class.objects.bulk_create(
             objs)
+        # append serialized data after save has successfully called. Otherwise id could be None. See #3
+        self.response_data.extend(
+            [_serializer.__class__(instance=obj).data for obj in objs])
 
     def perform_bulk_delete(self, bulk_operation_data):
         obj_ids = []
