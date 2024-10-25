@@ -21,6 +21,29 @@ class TestAtomicOperationView(TestCase):
 
         self.maxDiff = None
 
+    def test_content_type_extension(self):
+        """Test that the correct content type is accepted
+        
+        The media type and parameters are defined at https://jsonapi.org/ext/atomic. This tests
+        hardcodes the value to separate the test from the library's constants.
+        
+        """
+        operations = []
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type='application/vnd.api+json; ext="https://jsonapi.org/ext/atomic"',
+
+            **{"HTTP_ACCEPT": 'application/vnd.api+json; ext="https://jsonapi.org/ext/atomic"'}
+        )
+
+        self.assertNotEqual(406, response.status_code)  # 406 Not Acceptable
+
     def test_view_processing_with_valid_request(self):
         operations = [
             {
