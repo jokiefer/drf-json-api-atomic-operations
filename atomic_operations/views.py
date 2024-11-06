@@ -1,4 +1,5 @@
 from typing import Dict, List
+from collections import defaultdict
 
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db.transaction import atomic
@@ -26,6 +27,8 @@ class AtomicOperationView(APIView):
 
     sequential = True
     response_data: List[Dict] = []
+
+    lid_to_id = defaultdict(dict)
 
     # TODO: proof how to check permissions for all operations
     # permission_classes = TODO
@@ -94,8 +97,15 @@ class AtomicOperationView(APIView):
 
     def handle_sequential(self, serializer, operation_code):
         if operation_code in ["add", "update", "update-relationship"]:
+            lid = serializer.initial_data.get("lid", None)
+
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
+            if operation_code == "add" and lid:
+                resource_type = serializer.initial_data["type"]
+                self.lid_to_id[resource_type][lid] = serializer.data["id"]
+
             if operation_code != "update-relationship":
                 self.response_data.append(serializer.data)
         else:
@@ -139,6 +149,36 @@ class AtomicOperationView(APIView):
                     bulk_operation_data["serializer_collection"][0], current_operation_code)
             bulk_operation_data["serializer_collection"] = []
 
+    def substitute_lids(self, data, idx, should_raise_unknown_lid_error):
+        if not isinstance(data, dict):
+            return
+
+        try:
+            lid = data.get("lid", None)
+            if lid:
+                resource_type = data["type"]
+                data["id"] = self.lid_to_id[resource_type][lid]
+        except KeyError:
+            if should_raise_unknown_lid_error:
+                raise UnprocessableEntity([
+                    {
+                        "id": "unknown-lid",
+                        "detail": f'Object with lid `{lid}` received for operation with index `{idx}` does not exist',
+                        "source": {
+                            "pointer": f"/{ATOMIC_OPERATIONS}/{idx}/data/lid"
+                        },
+                        "status": "422"
+                    }
+                ])
+            
+        for _, value in data.items():
+            if isinstance(value, dict):
+                self.substitute_lids(value, idx, should_raise_unknown_lid_error=True)
+            elif isinstance(value, list):
+                [self.substitute_lids(value, idx, should_raise_unknown_lid_error=True) for value in value]
+
+        return data     
+        
     def perform_operations(self, parsed_operations: List[Dict]):
         self.response_data = []  # reset local response data storage
 
@@ -153,6 +193,9 @@ class AtomicOperationView(APIView):
             for idx, operation in enumerate(parsed_operations):
                 operation_code = next(iter(operation))
                 obj = operation[operation_code]
+
+                should_raise_unknown_lid_error = operation_code != "add"
+                self.substitute_lids(obj, idx, should_raise_unknown_lid_error)
 
                 serializer = self.get_serializer(
                     idx=idx,

@@ -43,12 +43,24 @@ class AtomicOperationParser(JSONParser):
     renderer_class = renderers.JSONRenderer
 
     def check_resource_identifier_object(self, idx: int, resource_identifier_object: Dict, operation_code: str):
-        if operation_code in ["update", "remove"] and not resource_identifier_object.get("id"):
-            raise JsonApiParseError(
-                id="missing-id",
-                detail="The resource identifier object must contain an `id` member",
-                pointer=f"/{ATOMIC_OPERATIONS}/{idx}/{'data' if operation_code == 'update' else 'ref'}"
-            )
+        if operation_code in ["update", "remove"]:
+            resource_id = resource_identifier_object.get("id")
+            resource_lid = resource_identifier_object.get("lid")
+
+            if not (resource_id or resource_lid):
+                raise JsonApiParseError(
+                    id="missing-id",
+                    detail="The resource identifier object must contain an `id` member or a `lid` member",
+                    pointer=f"/{ATOMIC_OPERATIONS}/{idx}/{'data' if operation_code == 'update' else 'ref'}"
+                )
+            
+            if resource_id and resource_lid:
+                raise JsonApiParseError(
+                    id="multiple-id-fields",
+                    detail="Only one of `id`, `lid` may be specified",
+                    pointer=f"/{ATOMIC_OPERATIONS}/{idx}/{'data' if operation_code == 'update' else 'ref'}"
+                )
+
         if not resource_identifier_object.get("type"):
             raise JsonApiParseError(
                 id="missing-type",
@@ -150,10 +162,14 @@ class AtomicOperationParser(JSONParser):
                 pointer=f"/{ATOMIC_OPERATIONS}/{idx}/op"
             )
 
-    def parse_id_and_type(self, resource_identifier_object):
+    def parse_id_lid_and_type(self, resource_identifier_object):
         parsed_data = {"id": resource_identifier_object.get(
             "id")} if "id" in resource_identifier_object else {}
         parsed_data["type"] = resource_identifier_object.get("type")
+
+        if lid := resource_identifier_object.get("lid", None):
+            parsed_data["lid"] = lid
+    
         return parsed_data
 
     def check_root(self, result):
@@ -173,7 +189,7 @@ class AtomicOperationParser(JSONParser):
             )
 
     def parse_operation(self, resource_identifier_object, result):
-        _parsed_data = self.parse_id_and_type(resource_identifier_object)
+        _parsed_data = self.parse_id_lid_and_type(resource_identifier_object)
         _parsed_data.update(self.parse_attributes(resource_identifier_object))
         _parsed_data.update(self.parse_relationships(resource_identifier_object))
         _parsed_data.update(self.parse_metadata(result))
