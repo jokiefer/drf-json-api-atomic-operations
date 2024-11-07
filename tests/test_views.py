@@ -23,10 +23,10 @@ class TestAtomicOperationView(TestCase):
 
     def test_content_type_extension(self):
         """Test that the correct content type is accepted
-        
+
         The media type and parameters are defined at https://jsonapi.org/ext/atomic. This tests
         hardcodes the value to separate the test from the library's constants.
-        
+
         """
         operations = []
 
@@ -538,7 +538,7 @@ class TestAtomicOperationView(TestCase):
                             "text": "JSON API paints my bikeshed!"
                     }
                 }
-            }, 
+            },
             {
                 "op": "add",
                 "data": {
@@ -548,7 +548,7 @@ class TestAtomicOperationView(TestCase):
                             "text": "JSON API paints my bikeshed!"
                     }
                 }
-            },{
+            }, {
                 "op": "update",
                 "data": {
                     "lid": "valid-lid-1",
@@ -675,7 +675,6 @@ class TestAtomicOperationView(TestCase):
 
         self.assertDictEqual(expected_result,
                              json.loads(response.content))
-    
 
         # check db content
         self.assertEqual(1, BasicModel.objects.count())
@@ -693,7 +692,6 @@ class TestAtomicOperationView(TestCase):
             # with django 4.2 TransactionTestCase.assertQuerysetEqual() is deprecated in favor of assertQuerySetEqual().
             self.assertQuerySetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
                                      BasicModel.objects.get(pk=2).to_many.all())
-            
 
     def test_view_processing_with_invalid_lid(self):
         operations = [
@@ -735,7 +733,7 @@ class TestAtomicOperationView(TestCase):
         error = json.loads(response.content)
         expected_error = {
             "errors": [
-               {
+                {
                     "id": "unknown-lid",
                     "detail": f'Object with lid `invalid-lid-test-2` received for operation with index `1` does not exist',
                     "source": {
@@ -797,7 +795,7 @@ class TestAtomicOperationView(TestCase):
         error = json.loads(response.content)
         expected_error = {
             "errors": [
-               {
+                {
                     "id": "unknown-lid",
                     "detail": f'Object with lid `lid-type-mismatch-1` received for operation with index `2` does not exist',
                     "source": {
@@ -821,7 +819,7 @@ class TestAtomicOperationView(TestCase):
                         "text": "JSON API paints my bikeshed!"
                     }
                 },
-            }, 
+            },
             {
                 "op": "add",
                 "data": {
@@ -841,7 +839,7 @@ class TestAtomicOperationView(TestCase):
                         "text": "JSON API paints my bikeshed!"
                     }
                 },
-            },{
+            }, {
                 "op": "add",
                 "data": {
                     "type": "BasicModel",
@@ -869,7 +867,7 @@ class TestAtomicOperationView(TestCase):
                         }
                     }
                 }
-            }, 
+            },
         ]
 
         data = {

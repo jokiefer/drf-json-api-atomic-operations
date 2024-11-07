@@ -23,10 +23,11 @@ Implemented Features
 * `Updating To-One Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships>`_
 * `Updating To-Many Relationships <https://jsonapi.org/ext/atomic/#auto-id-updating-to-many-relationships>`_
 * error reporting with json pointer to the concrete operation and the wrong attributes
-
+* `local identity (lid) <https://jsonapi.org/ext/atomic/#operation-objects>`_ handling
 
 ToDo
 ~~~~
 
+Only one major feature need to be implemented for first major version v1.0.0:
+
 * permission handling
-* `local identity (lid) <https://jsonapi.org/ext/atomic/#operation-objects>`_ handling
