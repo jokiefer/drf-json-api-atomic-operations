@@ -228,7 +228,7 @@ class TestAtomicOperationParser(TestCase):
             }
         )
 
-    def test_primary_data_without_id(self):
+    def test_primary_data_without_id_or_lid(self):
         data = {
             ATOMIC_OPERATIONS: [
                {
@@ -242,7 +242,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             JsonApiParseError,
-            "The resource identifier object must contain an `id` member",
+            "The resource identifier object must contain an `id` member or a `lid` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -263,7 +263,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             JsonApiParseError,
-            "The resource identifier object must contain an `id` member",
+            "The resource identifier object must contain an `id` member or a `lid` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -284,7 +284,7 @@ class TestAtomicOperationParser(TestCase):
         stream = BytesIO(json.dumps(data).encode("utf-8"))
         self.assertRaisesRegex(
             JsonApiParseError,
-            "The resource identifier object must contain an `id` member",
+            "The resource identifier object must contain an `id` member or a `lid` member",
             self.parser.parse,
             **{
                 "stream": stream,
@@ -359,6 +359,98 @@ class TestAtomicOperationParser(TestCase):
         self.assertRaisesRegex(
             JsonApiParseError,
             "Received operation objects is not a valid JSON:API atomic operation request",
+            self.parser.parse,
+            **{
+                "stream": stream,
+                "parser_context": self.parser_context
+            }
+        )
+
+    def test_parse_with_lid(self):
+        data = {
+            ATOMIC_OPERATIONS: [
+                {
+                    "op": "add",
+                    "data": {
+                        "lid": "1",
+                        "type": "articles",
+                        "attributes": {
+                            "title": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "op": "update",
+                    "data": {
+                        "lid": "1",
+                        "type": "articles",
+                        "attributes": {
+                            "title": "JSON API supports lids!"
+                        }
+                    }
+                },
+                {
+                    "op": "remove",
+                    "ref": {
+                        "lid": "1",
+                        "type": "articles",
+                    }
+                }
+            ]
+        }
+        stream = BytesIO(json.dumps(data).encode("utf-8"))
+
+        result = self.parser.parse(stream, parser_context=self.parser_context)
+        expected_result = [
+            {
+                "add": {
+                    "type": "articles",
+                    "lid": "1",
+                    "title": "JSON API paints my bikeshed!"
+                }
+            },
+            {
+                "update": {
+                    "lid": "1",
+                    "type": "articles",
+                    "title": "JSON API supports lids!"
+                }
+            },
+            {
+                "remove": {
+                    "lid": "1",
+                    "type": "articles"
+                }
+            }
+        ]
+        self.assertEqual(expected_result, result)
+
+    def test_primary_data_with_id_and_lid(self):
+        data = {
+            ATOMIC_OPERATIONS: [
+               {
+                   "op": "add",
+                   "data": {
+                       "lid": "1",
+                       "type": "articles",
+                       "title": "JSON API paints my bikeshed!"
+                   }
+               },
+               {
+                   "op": "update",
+                   "data": {
+                       "lid": "1",
+                       "id": "1",
+                       "type": "articles",
+                       "title": "JSON API supports lids!"
+                   }
+               }
+            ]
+        }
+        stream = BytesIO(json.dumps(data).encode("utf-8"))
+        self.assertRaisesRegex(
+            JsonApiParseError,
+            "Only one of `id`, `lid` may be specified",
             self.parser.parse,
             **{
                 "stream": stream,

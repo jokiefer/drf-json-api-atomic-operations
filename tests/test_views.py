@@ -421,7 +421,7 @@ class TestAtomicOperationView(TestCase):
             "errors": [
                 {
                     "id": "missing-id",
-                    "detail": "The resource identifier object must contain an `id` member",
+                    "detail": "The resource identifier object must contain an `id` member or a `lid` member",
                     "status": "400",
                     "source": {
                         "pointer": f"/{ATOMIC_OPERATIONS}/2/ref"
@@ -498,3 +498,454 @@ class TestAtomicOperationView(TestCase):
 
         self.assertEqual(204, response.status_code)
         self.assertFalse(response.content)
+
+    def test_view_processing_with_lid_substitution(self):
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "lid": "valid-lid-1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "lid": "valid-lid-2",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, {
+                "op": "add",
+                "data": {
+                    "lid": "valid-lid-1",
+                    "type": "RelatedModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            },
+            {
+                "op": "add",
+                "data": {
+                    "lid": "valid-lid-1",
+                    "type": "RelatedModelTwo",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }, 
+            {
+                "op": "add",
+                "data": {
+                    "lid": "valid-lid-2",
+                    "type": "RelatedModelTwo",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            },{
+                "op": "update",
+                "data": {
+                    "lid": "valid-lid-1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed2!"
+                    }
+                }
+            }, {
+                "op": "remove",
+                "ref": {
+                    "lid": "valid-lid-1",
+                    "type": "BasicModel",
+                }
+            },
+            {
+                "op": "update",
+                "ref": {
+                    "lid": "valid-lid-2",
+                    "type": "BasicModel",
+                    "relationship": "to_one"
+                },
+                "data": {"type": "RelatedModel", "lid": "valid-lid-1"}
+            }, {
+                "op": "update",
+                "ref": {
+                    "lid": "valid-lid-2",
+                    "type": "BasicModel",
+                    "relationship": "to_many"
+                },
+                "data": [{"type": "RelatedModelTwo", "lid": "valid-lid-1"}, {"type": "RelatedModelTwo", "lid": "valid-lid-2"}]
+            }
+        ]
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        self.assertEqual(200, response.status_code)
+
+        expected_result = {
+            ATOMIC_RESULTS: [
+                {
+                    "data": {
+                        "id": "1",
+
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "2",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {'data': [], 'meta': {'count': 0}},
+                            "to_one": {'data': None},
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModelTwo",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "2",
+                        "type": "RelatedModelTwo",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed2!"
+                        },
+                        "relationships": {
+                            "to_many": {
+                                'data': [], 'meta': {'count': 0}},
+                            "to_one": {
+                                "data": None
+                            }
+                        },
+                    }
+                }
+            ]
+        }
+
+        self.assertDictEqual(expected_result,
+                             json.loads(response.content))
+    
+
+        # check db content
+        self.assertEqual(1, BasicModel.objects.count())
+        self.assertEqual(1, RelatedModel.objects.count())
+        self.assertEqual(2, RelatedModelTwo.objects.count())
+
+        self.assertEqual(RelatedModel.objects.get(pk=1),
+                         BasicModel.objects.get(pk=2).to_one)
+
+        major, minor, _, _, _ = VERSION
+        if int(major) <= 4 and int(minor) <= 1:
+            self.assertQuerysetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                                     BasicModel.objects.get(pk=2).to_many.all())
+        else:
+            # with django 4.2 TransactionTestCase.assertQuerysetEqual() is deprecated in favor of assertQuerySetEqual().
+            self.assertQuerySetEqual(RelatedModelTwo.objects.filter(pk__in=[1, 2]),
+                                     BasicModel.objects.get(pk=2).to_many.all())
+            
+
+    def test_view_processing_with_invalid_lid(self):
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "lid": "invalid-lid-test-1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            },
+            {
+                "op": "update",
+                "data": {
+                    "type": "BasicModel",
+                    "lid": "invalid-lid-test-2",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            }
+        ]
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        error = json.loads(response.content)
+        expected_error = {
+            "errors": [
+               {
+                    "id": "unknown-lid",
+                    "detail": f'Object with lid `invalid-lid-test-2` received for operation with index `1` does not exist',
+                    "source": {
+                        "pointer": f"/{ATOMIC_OPERATIONS}/1/data/lid"
+                    },
+                    "status": "422"
+                }
+            ]
+        }
+        self.assertEqual(422, response.status_code)
+        self.assertDictEqual(expected_error, error)
+
+    def test_view_processing_with_lid_type_mismatch(self):
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "lid": "lid-type-mismatch-1",
+                    "type": "BasicModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            },
+            {
+                "op": "add",
+                "data": {
+                    "type": "RelatedModel",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                    }
+                }
+            },
+            {
+                "op": "update",
+                "data": {
+                    "type": "RelatedModel",
+                    "lid": "lid-type-mismatch-1",
+                    "attributes": {
+                            "text": "JSON API paints my bikeshed3!"
+                    }
+                }
+            }
+        ]
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        error = json.loads(response.content)
+        expected_error = {
+            "errors": [
+               {
+                    "id": "unknown-lid",
+                    "detail": f'Object with lid `lid-type-mismatch-1` received for operation with index `2` does not exist',
+                    "source": {
+                        "pointer": f"/{ATOMIC_OPERATIONS}/2/data/lid"
+                    },
+                    "status": "422"
+                }
+            ]
+        }
+        self.assertEqual(422, response.status_code)
+        self.assertDictEqual(expected_error, error)
+
+    def test_adding_resource_with_lid_relationship(self):
+        operations = [
+            {
+                "op": "add",
+                "data": {
+                    "type": "RelatedModel",
+                    "lid": "relationship-lid-test-1",
+                    "attributes": {
+                        "text": "JSON API paints my bikeshed!"
+                    }
+                },
+            }, 
+            {
+                "op": "add",
+                "data": {
+                    "type": "RelatedModelTwo",
+                    "lid": "relationship-lid-test-1",
+                    "attributes": {
+                        "text": "JSON API paints my bikeshed!"
+                    }
+                },
+            },
+            {
+                "op": "add",
+                "data": {
+                    "type": "RelatedModelTwo",
+                    "lid": "relationship-lid-test-2",
+                    "attributes": {
+                        "text": "JSON API paints my bikeshed!"
+                    }
+                },
+            },{
+                "op": "add",
+                "data": {
+                    "type": "BasicModel",
+                    "attributes": {
+                        "text": "JSON API paints my bikeshed!"
+                    },
+                    "relationships": {
+                        "to_one": {
+                            "data": {
+                                "lid": "relationship-lid-test-1",
+                                "type": "RelatedModel"
+                            }
+                        },
+                        "to_many": {
+                            "data": [
+                                {
+                                    "lid": "relationship-lid-test-1",
+                                    "type": "RelatedModelTwo"
+                                },
+                                {
+                                    "lid": "relationship-lid-test-2",
+                                    "type": "RelatedModelTwo"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }, 
+        ]
+
+        data = {
+            ATOMIC_OPERATIONS: operations
+        }
+
+        response = self.client.post(
+            path="/",
+            data=data,
+            content_type=ATOMIC_CONTENT_TYPE,
+
+            **{"HTTP_ACCEPT": ATOMIC_CONTENT_TYPE}
+        )
+
+        # check response
+        self.assertEqual(200, response.status_code)
+
+        expected_result = {
+            ATOMIC_RESULTS: [
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "RelatedModelTwo",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                    }
+                },
+                {
+                    "data": {
+                        "id": "2",
+                        "type": "RelatedModelTwo",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        }
+                    }
+                },
+                {
+                    "data": {
+                        "id": "1",
+                        "type": "BasicModel",
+                        "attributes": {
+                            "text": "JSON API paints my bikeshed!"
+                        },
+                        "relationships": {
+                            "to_many": {
+                                'data': [
+                                    {
+                                        "id": "1",
+                                        "type": "RelatedModelTwo"
+                                    },
+                                    {
+                                        "id": "2",
+                                        "type": "RelatedModelTwo"
+                                    }
+                                ], 'meta': {'count': 2}},
+                            "to_one": {
+                                "data": {
+                                    "id": "1",
+                                    "type": "RelatedModel"
+                                }
+                            }
+                        },
+                    }
+                },
+            ]
+        }
+
+        self.assertDictEqual(expected_result,
+                             json.loads(response.content))
