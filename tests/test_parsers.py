@@ -436,7 +436,7 @@ class TestAtomicOperationParser(TestCase):
                        "title": "JSON API paints my bikeshed!"
                    }
                },
-               {
+                {
                    "op": "update",
                    "data": {
                        "lid": "1",
